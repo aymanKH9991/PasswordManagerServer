@@ -1,10 +1,10 @@
 import asyncio
-
+from Messages import Respond
 
 async def main():
-    print('Hello,',end=' ')
+    respondMessage = Respond.RespondMessage("Connection Successfully")
+    print(respondMessage.to_json_string())
     await asyncio.sleep(1)
-    print('World From Client')
 
 
 if __name__ == '__main__':
