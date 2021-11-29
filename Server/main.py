@@ -1,11 +1,16 @@
 import asyncio
 from Messages import Respond
+from controller import ServerController as sc
+
 
 async def main():
-    respondMessage = Respond.RespondMessage("Connection Successfully")
-    print(respondMessage.to_json_string())
-    await asyncio.sleep(1)
+    task = await sc.Server().handle()
+    asyncio.create_task(task)
 
 
 if __name__ == '__main__':
-    asyncio.run(main())
+    try:
+        asyncio.run(main())
+    except KeyboardInterrupt as e:
+        print("Server Shout Down")
+        pass
