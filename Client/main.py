@@ -10,8 +10,14 @@ async def main():
     await task
 
 
+def exceptionHandler(loop: asyncio.AbstractEventLoop, dic: dict):
+    pass
+
+
 if __name__ == '__main__':
     try:
-        asyncio.run(main())
-    except KeyboardInterrupt:
+        loop = asyncio.get_event_loop()
+        loop.set_exception_handler(exceptionHandler)
+        loop.run_until_complete(main())
+    except KeyboardInterrupt as e:
         print("Forced Closed")

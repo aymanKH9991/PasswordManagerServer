@@ -24,8 +24,8 @@ class Server:
                 data = await reader.read(1024)
                 message = data.decode()
                 if not reader.at_eof():
-                # print(message)
-                    writer.write(f'Hello, From Server {random.randint(0,time.time_ns())}'.encode(encoding='utf8'))
+                    # print(message)
+                    writer.write(f'Hello, From Server {random.randint(0, time.time_ns())}'.encode(encoding='utf8'))
                     await writer.drain()
                     i += 1
                     await asyncio.sleep(2)
@@ -36,3 +36,5 @@ class Server:
             print('Done' + peer[0])
         except RuntimeError as r:
             print("Error")
+        except ConnectionError as c:
+            print("Connection Issue\t", peer[0])
