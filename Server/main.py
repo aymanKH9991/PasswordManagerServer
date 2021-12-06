@@ -13,4 +13,5 @@ if __name__ == '__main__':
         asyncio.run(main())
     except KeyboardInterrupt as e:
         print("Server Shout Down")
-        pass
+    except RuntimeError as e:
+        print('End With Error')
