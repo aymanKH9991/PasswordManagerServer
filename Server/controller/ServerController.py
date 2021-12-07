@@ -2,10 +2,15 @@ import asyncio
 import random
 import socket as sk
 import time
+import Model.Model as model
 
 
 class Server:
+    def __init__(self):
+        self.__DB = model.DB()
+
     async def handle(self, address='127.0.0.1', port='50050'):
+        print(self.__DB.get_db_name())
         self.main_sock = await asyncio.start_server(self.handle_conn, address, port, family=sk.AF_INET)
         try:
             async with self.main_sock:
