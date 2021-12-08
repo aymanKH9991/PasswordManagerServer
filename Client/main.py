@@ -1,6 +1,7 @@
 import asyncio
 import Messages.NewUser as newUser
 from Controller import ClientController as cc
+from Controller import InputController as Ic
 
 
 async def main():
@@ -16,8 +17,11 @@ def exceptionHandler(loop: asyncio.AbstractEventLoop, dic: dict):
 
 if __name__ == '__main__':
     try:
-        loop = asyncio.get_event_loop()
-        loop.set_exception_handler(exceptionHandler)
-        loop.run_until_complete(main())
+        # loop = asyncio.get_event_loop()
+        # loop.set_exception_handler(exceptionHandler)
+        # loop.run_until_complete(main())
+        inp = Ic.CMDInput()
+        inp.init_input_ui()
+        inp.operations_ui()
     except KeyboardInterrupt as e:
         print("Forced Closed")
