@@ -6,6 +6,9 @@ import Messages.NewUser
 import Messages.OldUser
 import Model.Model as model
 import Messages.Put
+import Messages.Update
+import Messages.Delete
+import Messages.Get
 
 
 class CMDInput:
@@ -13,6 +16,7 @@ class CMDInput:
         self.Loged = False
         self.last_message = {}
         self.__DB = model.DB()
+        self.user_name = None
 
     def init_input_ui(self):
         try:
@@ -33,6 +37,7 @@ class CMDInput:
         password = input('Password: ')
         ms = Messages.NewUser.NewUserMessage(full_name=full_name, password=password)
         self.last_message = ms.to_json_string()
+        self.user_name = full_name
 
     def login_ui(self):
         users_name = self.__DB.get_users_name()
@@ -48,6 +53,7 @@ class CMDInput:
                                                  password=password,
                                                  unique_key=user['PublicKey'])
             self.last_message = ms.to_json_string()
+            self.user_name = full_name
         else:
             self.last_message = {
                 "Type": "Error",
@@ -77,8 +83,14 @@ class CMDInput:
             print(e)
 
     def put_password_ui(self):
+        name = self.user_name
+        if name is None:
+            self.last_message = {
+                "Type": "Error",
+                "Description": "Not Signed Up Or Logged In!!"
+            }
+            return
         title = input('Title: ')
-        name = input('Name: ')
         password = input('Password: ')
         description = input('Description: ')
         i = 1
@@ -111,10 +123,63 @@ class CMDInput:
         self.last_message = ms.to_json_string()
 
     def get_password_ui(self):
-        print('Get Password')
+        if self.user_name is None:
+            self.last_message = {
+                "Type": "Error",
+                "Description": "Not Signed Up Or Logged In!!"
+            }
+            return
+        title = input('Title: ')
+        ms = Messages.Get.GetMessage(title=title, name=self.user_name)
+        self.last_message = ms.to_json_string()
 
     def update_password_ui(self):
-        print('Update Password')
+        name = self.user_name
+        if name is None:
+            self.last_message = {
+                "Type": "Error",
+                "Description": "Not Signed Up Or Logged In!!"
+            }
+            return
+        title = input('Title: ')
+        password = input('Password: ')
+        description = input('Description: ')
+        i = 1
+        file_path = input(f'To add Files just type In path of File: \n{i}.')
+        files = {}
+        while True:
+            if file_path == '' or file_path == '\n':
+                break
+            else:
+                if file_path[0] == '"' and file_path[-1] == '"':
+                    file_path = file_path[1:-1]
+                if pathlib.Path.exists(pathlib.Path(file_path)):
+                    if file_path.split('\\')[-1].split('.')[-1] == 'txt':
+                        with open(file_path, 'r+', encoding='utf8') as file:
+                            files[f'{i}'] = {
+                                'FileName': file_path.split('\\')[-1],
+                                'File': file.read()
+                            }
+                            i += 1
+                    else:
+                        print('only support txt file for Now')
+                else:
+                    print('File Not Exist')
+            file_path = input(f'{i}.')
+        ms = Messages.Update.UpdateMessage(title=title,
+                                           name=name,
+                                           password=password,
+                                           description=description,
+                                           files=files)
+        self.last_message = ms.to_json_string()
 
     def delete_password_ui(self):
-        print('Delete Password')
+        if self.user_name is None:
+            self.last_message = {
+                "Type": "Error",
+                "Description": "Not Signed Up Or Logged In!!"
+            }
+            return
+        title = input('Title: ')
+        ms = Messages.Delete.DeleteMessage(title=title, name=self.user_name)
+        self.last_message = ms.to_json_string()
