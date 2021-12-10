@@ -23,5 +23,6 @@ if __name__ == '__main__':
         inp = Ic.CMDInput()
         inp.init_input_ui()
         inp.operations_ui()
+        print(inp.last_message)
     except KeyboardInterrupt as e:
         print("Forced Closed")
