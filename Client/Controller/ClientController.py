@@ -9,6 +9,7 @@ class Client:
         self.address = address
         self.port = port
         self.input = Ic.CMDInput()
+        self.receive_buffer = 2048
 
     async def handle(self):
         try:
@@ -23,11 +24,9 @@ class Client:
                     await self.wr_sock.drain()
                     self.wr_sock.write(mes[1])
                     await self.wr_sock.drain()
-                data = await self.re_sock.read(1024)
-                msg = data.decode(encoding='utf8')
+                data = await self.re_sock.read(self.receive_buffer)
                 if not self.re_sock.at_eof():
-                    print(msg)
-                    print(len(msg))
+                    self.handle_receive_message(data)
                 else:
                     self.wr_sock.close()
         except ConnectionRefusedError:
@@ -59,3 +58,19 @@ class Client:
             return [bytes(json.dumps(mes1), 'utf8'), mes_b]
         else:
             return [bytes(self.input.last_message, 'utf8')]
+
+    def handle_receive_message(self, msg: bytes):
+        msg_str = msg.decode('utf8')
+        # print(msg_str)
+        try:
+            mes_dict = json.loads(msg_str)
+            if mes_dict['Type'] == 'Respond':
+                if type(mes_dict['Details']) == str:
+                    print(mes_dict['Details'])
+                elif type(mes_dict) == dict:
+                    sub_dict = mes_dict['Details']
+                    print(sub_dict)
+            elif mes_dict['Type'] == 'Size':
+                self.receive_buffer = mes_dict['Size']
+        except Exception as e:
+            print('Error in Receive Message')
