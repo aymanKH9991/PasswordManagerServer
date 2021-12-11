@@ -13,7 +13,6 @@ import Messages.Get
 
 class CMDInput:
     def __init__(self):
-        self.Loged = False
         self.last_message = {}
         self.__DB = model.DB()
         self.user_name = None
@@ -24,22 +23,22 @@ class CMDInput:
                               + "1.SignUp\n" + "2.Login\n"
                               + "3.exit\n" + "Choose: ").lower()
             if input_str in ['signup', '1']:
-                self.signup_ui()
+                self.__signup_ui()
             elif input_str in ['login', '2']:
-                self.login_ui()
+                self.__login_ui()
             else:
                 sys.exit(0)
         except Exception as e:
             print(e)
 
-    def signup_ui(self):
+    def __signup_ui(self):
         full_name = input('Full Name: ')
         password = input('Password: ')
         ms = Messages.NewUser.NewUserMessage(full_name=full_name, password=password)
         self.last_message = ms.to_json_string()
         self.user_name = full_name
 
-    def login_ui(self):
+    def __login_ui(self):
         users_name = self.__DB.get_users_name()
         if len(users_name) != 0:
             print('<<Registered Users>>')
@@ -67,22 +66,19 @@ class CMDInput:
                               + "3.Update Password\n4.Delete Password\n5.exit\n"
                               + "Choose: ").lower()
             if input_str in ['add', '1']:
-                self.put_password_ui()
+                self.__put_password_ui()
             elif input_str in ['get', '2']:
-                self.get_password_ui()
+                self.__get_password_ui()
             elif input_str in ['update', '3']:
-                self.update_password_ui()
+                self.__update_password_ui()
             elif input_str in ['delete', '4']:
-                self.delete_password_ui()
+                self.__delete_password_ui()
             else:
-                self.last_message = {
-                    "Type": "Finished",
-                    "Description": "End User input"
-                }
+                sys.exit(0)
         except Exception as e:
             print(e)
 
-    def put_password_ui(self):
+    def __put_password_ui(self):
         name = self.user_name
         if name is None:
             self.last_message = {
@@ -122,7 +118,7 @@ class CMDInput:
                                      files=files)
         self.last_message = ms.to_json_string()
 
-    def get_password_ui(self):
+    def __get_password_ui(self):
         if self.user_name is None:
             self.last_message = {
                 "Type": "Error",
@@ -133,7 +129,7 @@ class CMDInput:
         ms = Messages.Get.GetMessage(title=title, name=self.user_name)
         self.last_message = ms.to_json_string()
 
-    def update_password_ui(self):
+    def __update_password_ui(self):
         name = self.user_name
         if name is None:
             self.last_message = {
@@ -173,7 +169,7 @@ class CMDInput:
                                            files=files)
         self.last_message = ms.to_json_string()
 
-    def delete_password_ui(self):
+    def __delete_password_ui(self):
         if self.user_name is None:
             self.last_message = {
                 "Type": "Error",
