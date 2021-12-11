@@ -20,17 +20,12 @@ class Client:
             self.re_sock, self.wr_sock = await asyncio.open_connection(self.address, self.port, family=sk.AF_INET)
             while not self.wr_sock.is_closing():
                 mes = self.handle_sending_message()
-                if len(mes) == 1:
-                    self.wr_sock.write(mes[0])
-                    await self.wr_sock.drain()
-                elif len(mes) == 2:
-                    self.wr_sock.write(mes[0])
-                    await self.wr_sock.drain()
-                    self.wr_sock.write(mes[1])
+                for m in mes:
+                    self.wr_sock.write(m)
                     await self.wr_sock.drain()
                 data = await self.re_sock.read(self.receive_buffer)
                 if not self.re_sock.at_eof():
-                    self.handle_receive_message(data)
+                    await self.handle_receive_message(data)
                 else:
                     self.wr_sock.close()
         except ConnectionRefusedError:
@@ -65,9 +60,8 @@ class Client:
         else:
             return [bytes(self.input.last_message, 'utf8')]
 
-    def handle_receive_message(self, msg: bytes):
+    async def handle_receive_message(self, msg: bytes):
         msg_str = msg.decode('utf8')
-        # print(msg_str)
         try:
             mes_dict = json.loads(msg_str)
             if mes_dict['Type'] == 'Respond':
@@ -79,6 +73,10 @@ class Client:
                         self.signup_handler(sub_dict)
                     if sub_dict['Type'] == 'Login':
                         self.login_handler(sub_dict)
+                    if sub_dict['Type'] == 'Put':
+                        self.put_handler(sub_dict)
+                    if sub_dict['Type'] == 'Get':
+                        await self.get_handler(sub_dict)
             elif mes_dict['Type'] == 'Size':
                 self.receive_buffer = int(mes_dict['Size'])
         except Exception as e:
@@ -98,3 +96,21 @@ class Client:
         else:
             sys.exit(mes_dict['Result'])
 
+    async def get_handler(self, mes_dict):
+        if mes_dict['Result'] == 'Done':
+            buf = int(mes_dict['Size'])
+            try:
+                data = await self.re_sock.read(buf)
+                mes_dict = json.loads(data)
+                for i, r in enumerate(mes_dict['Details']['Result']):
+                    print('<<<' + str(i + 1) + '>>>')
+                    for key, val in json.loads(r).items():
+                        print(key, ':', val)
+            except Exception as e:
+                print(e)
+                print('Error In Get')
+        else:
+            print(mes_dict['Type'], ':', mes_dict['Result'])
+
+    def put_handler(self, mes_dict):
+        print(mes_dict['Type'], ':', mes_dict['Result'])

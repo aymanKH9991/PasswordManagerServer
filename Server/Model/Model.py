@@ -62,3 +62,23 @@ class DB:
 
     def get_user_by_peer(self, peer):
         return self.query('ActiveUsers', {"Peer": peer})
+
+    def add_element(self, username, title, description, password, files):
+        if self.is_user_active(username):
+            self.__DB['Elements'].insert_one({
+                'Title': title,
+                'Name': username,
+                'Password': password,
+                'Description': description,
+                'Files': files
+            })
+            return 1
+        return -1
+
+    def get_user_elements(self, name):
+        return self.query('Elements', {'Name': name})
+
+    def get_elemnet_by_title(self, name, title):
+        if self.is_user_active(name):
+            res = self.query('Elements', {'Name': name, 'Title': title})
+        return res

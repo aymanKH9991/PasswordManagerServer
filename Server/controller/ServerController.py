@@ -65,8 +65,13 @@ class Server:
                 return self.__signup_handler(msg_dict=msg_dict)
             elif msg_dict['Type'] == 'OldUser':
                 return self.__login_handler(msg_dict=msg_dict)
+            elif msg_dict['Type'] == 'Put':
+                return self.__put_handler(msg_dict=msg_dict)
+            elif msg_dict['Type'] == 'Get':
+                return self.__get_handler(msg_dict=msg_dict)
 
         except Exception as e:
+            print(e)
             print('Error in receive Message', msg_str)
 
     def __signup_handler(self, msg_dict):
@@ -95,10 +100,48 @@ class Server:
                                                          }).to_json_byte()]
 
     def __get_handler(self, msg_dict):
-        print(msg_dict)
+        res = self.__DB.get_elemnet_by_title(msg_dict['Name'], msg_dict['Title'])
+        if res is not None:
+            finalList = []
+            if res.count() == 0:
+                finalList.append(Messages.Respond.RespondMessage({'Type': 'Get',
+                                                                  'Result': 'Error In Get'
+                                                                  }).to_json_byte())
+                return finalList
+            else:
+                temp_list = []
+                for r in res:
+                    get_mes = json.dumps({'Title': r['Title'],
+                                          'Name': r['Name'],
+                                          'Password': r['Password'],
+                                          'Description': r['Description'],
+                                          'Files': r['Files']
+                                          })
+                    temp_list.append(get_mes)
+            get_mes = Messages.Respond.RespondMessage({'Type': 'Get', 'Result': temp_list}).to_json_byte()
+            finalList.append(Messages.Respond.RespondMessage({'Type': 'Get',
+                                                              'Result': 'Done',
+                                                              'Size': len(get_mes)
+                                                              }).to_json_byte())
+            finalList.append(get_mes)
+
+            return finalList
 
     def __put_handler(self, msg_dict):
-        print(msg_dict)
+        res = self.__DB.add_element(username=msg_dict['Name'],
+                                    title=msg_dict['Title'],
+                                    description=msg_dict['Description'],
+                                    password=msg_dict['Password'],
+                                    files=msg_dict['Files'])
+        self.receive_buffer = 2048
+        if res == 1:
+            return [Messages.Respond.RespondMessage({'Type': 'Put',
+                                                     'Result': 'Done'
+                                                     }).to_json_byte()]
+        else:
+            return [Messages.Respond.RespondMessage({'Type': 'Put',
+                                                     'Result': 'Error In Put Data'
+                                                     }).to_json_byte()]
 
     def __update_handler(self, msg_dict):
         print(msg_dict)
