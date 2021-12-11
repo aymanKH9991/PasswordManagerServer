@@ -31,6 +31,8 @@ class Client:
                     self.wr_sock.close()
         except ConnectionRefusedError:
             print("No Server Respond")
+        except ConnectionResetError:
+            print("Server Down")
 
     def handle_sending_message(self):
         if self.input.user_name is None:

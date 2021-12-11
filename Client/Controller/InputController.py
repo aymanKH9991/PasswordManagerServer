@@ -32,11 +32,14 @@ class CMDInput:
             print(e)
 
     def __signup_ui(self):
-        full_name = input('Full Name: ')
-        password = input('Password: ')
-        ms = Messages.NewUser.NewUserMessage(full_name=full_name, password=password)
-        self.last_message = ms.to_json_string()
-        self.user_name = full_name
+        try:
+            full_name = input('Full Name: ')
+            password = input('Password: ')
+            ms = Messages.NewUser.NewUserMessage(full_name=full_name, password=password)
+            self.last_message = ms.to_json_string()
+            self.user_name = full_name
+        except Exception:
+            sys.exit(-1)
 
     def __login_ui(self):
         users_name = self.__DB.get_users_name()
@@ -44,20 +47,23 @@ class CMDInput:
             print('<<Registered Users>>')
             for i, name in enumerate(users_name):
                 print(i, name)
-        full_name = input('Name: ')
-        if full_name in users_name:
-            password = input('Password: ')
-            user = self.__DB.query('Users', {'Name': full_name})
-            ms = Messages.OldUser.OldUserMessage(name=full_name,
-                                                 password=password,
-                                                 unique_key=user['PublicKey'])
-            self.last_message = ms.to_json_string()
-            self.user_name = full_name
-        else:
-            self.last_message = {
-                "Type": "Error",
-                "Description": "There No Such a User Name"
-            }
+        try:
+            full_name = input('Name: ')
+            if full_name in users_name:
+                password = input('Password: ')
+                user = self.__DB.query('Users', {'Name': full_name})
+                ms = Messages.OldUser.OldUserMessage(name=full_name,
+                                                     password=password,
+                                                     unique_key=user['PublicKey'])
+                self.last_message = ms.to_json_string()
+                self.user_name = full_name
+            else:
+                self.last_message = {
+                    "Type": "Error",
+                    "Description": "There No Such a User Name"
+                }
+        except Exception:
+            sys.exit(-1)
 
     def operations_ui(self):
         try:

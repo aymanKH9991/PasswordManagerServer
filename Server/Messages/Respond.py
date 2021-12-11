@@ -2,7 +2,7 @@ from Messages import Message as Ms
 
 
 class RespondMessage(Ms.Message):
-    def __init__(self, details: str, message: dict = None):
+    def __init__(self, details: dict, message: dict = None):
         try:
             if message is None:
                 self.message_info = {

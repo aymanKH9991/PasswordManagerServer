@@ -10,11 +10,11 @@ class DB:
     def get_db_name(self):
         return self.__DB.name + 'DB'
 
-    async def insert_new_user(self, name: str, password: str, public_key: str):
+    def insert_new_user(self, name: str, password: str, public_key: str):
         user_itr = self.__DB['Users'].find({'Name': name})
         if user_itr.count() != 0:
             for user in user_itr:
-                if user['PublicKey'] == public_key:
+                if user['PublicKey'] == public_key or user['Name'] == name:
                     return -1
         user = self.__DB['Users'].insert_one({
             'Name': name,
@@ -39,4 +39,22 @@ class DB:
         return self.__DB[collection_name].find(query)
 
     def check_user(self, name, public_key):
-        return self.query('Users', {'PublicKey': public_key, 'Name': name}).count() == 1
+        q_res = self.query('Users', {'PublicKey': public_key, 'Name': name})
+        return [q_res, q_res.count() == 1]
+
+    def add_active_user(self, name, public_key):
+        if not self.is_user_active(name):
+            self.__DB['ActiveUsers'].insert_one({
+                'Name': name,
+                'PublicKey': public_key
+            })
+
+    def remove_active_user(self, name, public_key):
+        if self.is_user_active(name):
+            self.__DB['ActiveUsers'].delete_one({
+                'Name': name,
+                'PublicKey': public_key
+            })
+
+    def is_user_active(self, name):
+        return self.query('ActiveUsers', {'Name': name}).count() == 1
