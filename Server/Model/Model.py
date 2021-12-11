@@ -40,13 +40,14 @@ class DB:
 
     def check_user(self, name, public_key):
         q_res = self.query('Users', {'PublicKey': public_key, 'Name': name})
-        return [q_res, q_res.count() == 1]
+        return [q_res[0], q_res.count() == 1]
 
-    def add_active_user(self, name, public_key):
+    def add_active_user(self, name, public_key, peer):
         if not self.is_user_active(name):
             self.__DB['ActiveUsers'].insert_one({
                 'Name': name,
-                'PublicKey': public_key
+                'PublicKey': public_key,
+                'Peer': peer
             })
 
     def remove_active_user(self, name, public_key):
@@ -58,3 +59,6 @@ class DB:
 
     def is_user_active(self, name):
         return self.query('ActiveUsers', {'Name': name}).count() == 1
+
+    def get_user_by_peer(self, peer):
+        return self.query('ActiveUsers', {"Peer": peer})

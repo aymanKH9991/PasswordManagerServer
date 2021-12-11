@@ -1,7 +1,10 @@
 import asyncio
 import json
 import socket as sk
+import sys
+
 from Controller import InputController as Ic
+from Model import Model as model
 
 
 class Client:
@@ -10,6 +13,7 @@ class Client:
         self.port = port
         self.input = Ic.CMDInput()
         self.receive_buffer = 2048
+        self.__DB = model.DB()
 
     async def handle(self):
         try:
@@ -49,7 +53,7 @@ class Client:
                 "Type": "Empty",
                 "Description": "No Action"
             }
-            return [bytes(json.dumps(mes1))]
+            return [bytes(json.dumps(mes1), 'utf8')]
         elif mes['Type'] in ('Put', 'Update'):
             mes_b = bytes(self.input.last_message, 'utf8')
             mes_len = len(mes_b)
@@ -71,8 +75,26 @@ class Client:
                     print(mes_dict['Details'])
                 elif type(mes_dict) == dict:
                     sub_dict = mes_dict['Details']
-                    print(sub_dict)
+                    if sub_dict['Type'] == 'Sign':
+                        self.signup_handler(sub_dict)
+                    if sub_dict['Type'] == 'Login':
+                        self.login_handler(sub_dict)
             elif mes_dict['Type'] == 'Size':
                 self.receive_buffer = int(mes_dict['Size'])
         except Exception as e:
             print('Error in Receive Message')
+
+    def signup_handler(self, mes_dict):
+        if mes_dict['Result'] == 'Done':
+            in_dict = json.loads(self.input.last_message)
+            self.__DB.insert_new_user(in_dict['Name'], in_dict['UniqueKey'])
+            print('SignUp Done')
+        else:
+            sys.exit(mes_dict['Result'])
+
+    def login_handler(self, mes_dict):
+        if mes_dict['Result'] == 'Done':
+            print('You Logged in With User Name: ', self.input.user_name)
+        else:
+            sys.exit(mes_dict['Result'])
+

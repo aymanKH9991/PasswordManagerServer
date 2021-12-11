@@ -54,7 +54,7 @@ class CMDInput:
                 user = self.__DB.query('Users', {'Name': full_name})
                 ms = Messages.OldUser.OldUserMessage(name=full_name,
                                                      password=password,
-                                                     unique_key=user['PublicKey'])
+                                                     unique_key=user[0]['UniqueKey'])
                 self.last_message = ms.to_json_string()
                 self.user_name = full_name
             else:
@@ -62,7 +62,8 @@ class CMDInput:
                     "Type": "Error",
                     "Description": "There No Such a User Name"
                 }
-        except Exception:
+        except Exception as e:
+            print(e)
             sys.exit(-1)
 
     def operations_ui(self):

@@ -13,11 +13,11 @@ class DB:
         users = self.__DB['Users'].find({'Name': name})
         if users.count() != 0:
             for user in users:
-                if user['Public_key'] == public_key or user['Name'] == name:
+                if user['UniqueKey'] == public_key or user['Name'] == name:
                     return -1
         self.__DB['Users'].insert_one({
             'Name': name,
-            'Public_key': public_key
+            'UniqueKey': public_key
         })
 
     def query(self, collection_name, query):
