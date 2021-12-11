@@ -71,6 +71,6 @@ class Client:
                     sub_dict = mes_dict['Details']
                     print(sub_dict)
             elif mes_dict['Type'] == 'Size':
-                self.receive_buffer = mes_dict['Size']
+                self.receive_buffer = int(mes_dict['Size'])
         except Exception as e:
             print('Error in Receive Message')
