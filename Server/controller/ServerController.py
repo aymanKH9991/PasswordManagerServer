@@ -69,6 +69,10 @@ class Server:
                 return self.__put_handler(msg_dict=msg_dict)
             elif msg_dict['Type'] == 'Get':
                 return self.__get_handler(msg_dict=msg_dict)
+            elif msg_dict['Type'] == 'Update':
+                return self.__update_handler(msg_dict=msg_dict)
+            elif msg_dict['Type'] == 'Delete':
+                return self.__delete_handler(msg_dict=msg_dict)
 
         except Exception as e:
             print(e)
@@ -100,7 +104,7 @@ class Server:
                                                          }).to_json_byte()]
 
     def __get_handler(self, msg_dict):
-        res = self.__DB.get_elemnet_by_title(msg_dict['Name'], msg_dict['Title'])
+        res = self.__DB.get_element_by_title(msg_dict['Name'], msg_dict['Title'])
         if res is not None:
             finalList = []
             if res.count() == 0:
@@ -144,7 +148,18 @@ class Server:
                                                      }).to_json_byte()]
 
     def __update_handler(self, msg_dict):
-        print(msg_dict)
+        res = self.__DB.update_element(msg_dict['Name'], msg_dict['OldTitle'], msg_dict['Title'],
+                                       msg_dict['Password'], msg_dict['Description'], msg_dict['Files'])
+        self.receive_buffer = 2048
+        if res == 1:
+            return [Messages.Respond.RespondMessage({'Type': 'Update',
+                                                     'Result': 'Update Done'}).to_json_byte()]
+        else:
+            return [Messages.Respond.RespondMessage({'Type': 'Update', 'Result': 'Error In Update'}).to_json_byte()]
 
     def __delete_handler(self, msg_dict):
-        print(msg_dict)
+        res = self.__DB.delete_element(msg_dict['Name'], msg_dict['Title'])
+        if res == 1:
+            return [Messages.Respond.RespondMessage({'Type': 'Delete', 'Result': 'Delete Done'}).to_json_byte()]
+        else:
+            return [Messages.Respond.RespondMessage({'Type': 'Delete', 'Result': 'Error In Delete'}).to_json_byte()]

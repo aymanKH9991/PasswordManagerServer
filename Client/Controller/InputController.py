@@ -144,7 +144,8 @@ class CMDInput:
                 "Description": "Not Signed Up Or Logged In!!"
             }
             return
-        title = input('Title: ')
+        title = input('New Title: ')
+        old_title = input('Old Title: ')
         password = input('Password: ')
         description = input('Description: ')
         i = 1
@@ -170,6 +171,7 @@ class CMDInput:
                     print('File Not Exist')
             file_path = input(f'{i}.')
         ms = Messages.Update.UpdateMessage(title=title,
+                                           old_title=old_title,
                                            name=name,
                                            password=password,
                                            description=description,

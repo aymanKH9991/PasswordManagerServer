@@ -78,7 +78,29 @@ class DB:
     def get_user_elements(self, name):
         return self.query('Elements', {'Name': name})
 
-    def get_elemnet_by_title(self, name, title):
+    def get_element_by_title(self, name, title):
         if self.is_user_active(name):
             res = self.query('Elements', {'Name': name, 'Title': title})
         return res
+
+    def update_element(self, name, old_title, title, password, description, files):
+        res = self.get_element_by_title(name, old_title)
+        if res is None or res.count() == 0:
+            return -1
+        else:
+            self.__DB['Elements'].update_many({'Name': name, 'Title': old_title}, {'$set': {
+                "Title": title,
+                "Name": name,
+                "Password": password,
+                "Description": description,
+                "Files": files
+            }})
+            return 1
+
+    def delete_element(self, name, title):
+        res = self.get_element_by_title(name, title)
+        if res is None or res.count() == 0:
+            return -1
+        else:
+            self.__DB['Elements'].delete_many({'Name': name, 'Title': title})
+            return 1

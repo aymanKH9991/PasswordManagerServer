@@ -20,8 +20,13 @@ class Client:
             self.re_sock, self.wr_sock = await asyncio.open_connection(self.address, self.port, family=sk.AF_INET)
             while not self.wr_sock.is_closing():
                 mes = self.handle_sending_message()
-                for m in mes:
-                    self.wr_sock.write(m)
+                if len(mes) == 1:
+                    self.wr_sock.write(mes[0])
+                    await self.wr_sock.drain()
+                elif len(mes) == 2:
+                    self.wr_sock.write(mes[0])
+                    await self.wr_sock.drain()
+                    self.wr_sock.write(mes[1])
                     await self.wr_sock.drain()
                 data = await self.re_sock.read(self.receive_buffer)
                 if not self.re_sock.at_eof():
@@ -77,8 +82,10 @@ class Client:
                         self.put_handler(sub_dict)
                     if sub_dict['Type'] == 'Get':
                         await self.get_handler(sub_dict)
-            elif mes_dict['Type'] == 'Size':
-                self.receive_buffer = int(mes_dict['Size'])
+                    if sub_dict['Type'] == 'Delete':
+                        self.delete_handler(sub_dict)
+                    if sub_dict['Type'] == 'Update':
+                        self.update_handler(sub_dict)
         except Exception as e:
             print('Error in Receive Message')
 
@@ -113,4 +120,10 @@ class Client:
             print(mes_dict['Type'], ':', mes_dict['Result'])
 
     def put_handler(self, mes_dict):
+        print(mes_dict['Type'], ':', mes_dict['Result'])
+
+    def delete_handler(self, mes_dict):
+        print(mes_dict['Type'], ':', mes_dict['Result'])
+
+    def update_handler(self, mes_dict):
         print(mes_dict['Type'], ':', mes_dict['Result'])
