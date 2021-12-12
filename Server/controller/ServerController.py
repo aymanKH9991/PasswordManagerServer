@@ -74,6 +74,8 @@ class Server:
                 return self.__update_handler(msg_dict=msg_dict)
             elif msg_dict['Type'] == 'Delete':
                 return self.__delete_handler(msg_dict=msg_dict)
+            else:
+                return None
 
         except Exception as e:
             print(e)

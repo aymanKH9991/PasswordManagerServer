@@ -35,6 +35,8 @@ class CMDInput:
         try:
             full_name = input('Full Name: ')
             password = input('Password: ')
+            while len(password) < 8:
+                password = input('At Lest 8\nPassword: ')
             ms = Messages.NewUser.NewUserMessage(full_name=full_name, password=password)
             self.last_message = ms.to_json_string()
             self.user_name = full_name
@@ -51,6 +53,8 @@ class CMDInput:
             full_name = input('Name: ')
             if full_name in users_name:
                 password = input('Password: ')
+                while len(password) < 8:
+                    password = input('At Lest 8\nPassword: ')
                 user = self.__DB.query('Users', {'Name': full_name})
                 ms = Messages.OldUser.OldUserMessage(name=full_name,
                                                      password=password,

@@ -5,6 +5,7 @@ import sys
 
 from Controller import InputController as Ic
 from Model import Model as model
+from Cryptography import SymmetricLayer as sr
 
 
 class Client:
@@ -19,7 +20,7 @@ class Client:
         try:
             self.re_sock, self.wr_sock = await asyncio.open_connection(self.address, self.port, family=sk.AF_INET)
             while not self.wr_sock.is_closing():
-                mes = self.handle_sending_message()
+                mes = self.symmetric_encryption_handler(self.handle_sending_message())
                 if len(mes) == 1:
                     self.wr_sock.write(mes[0])
                     await self.wr_sock.drain()
@@ -127,3 +128,17 @@ class Client:
 
     def update_handler(self, mes_dict):
         print(mes_dict['Type'], ':', mes_dict['Result'])
+
+    def symmetric_encryption_handler(self, message_list: list):
+        try:
+            crypto_messages = []
+            for m in message_list:
+                js_mes = json.loads(m)
+                if js_mes['Type'] in ['NewUser', 'OldUser']:
+                    self.sym_layer = sr.SymmetricLayer(js_mes['Password'].encode('utf8'))
+                    crypto_messages.append(m)
+                else:
+                    crypto_messages.append(self.sym_layer.enc_dict(m))
+            return crypto_messages
+        except Exception as e:
+            print('Symmetric Handler')
