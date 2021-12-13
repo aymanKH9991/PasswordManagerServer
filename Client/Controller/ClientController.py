@@ -31,7 +31,7 @@ class Client:
                     await self.wr_sock.drain()
                 data = await self.re_sock.read(self.receive_buffer)
                 if not self.re_sock.at_eof():
-                    await self.handle_receive_message(data)
+                    await self.handle_receive_message(self.symmetric_decrypt_handler(data))
                 else:
                     self.wr_sock.close()
         except ConnectionRefusedError:
@@ -111,6 +111,7 @@ class Client:
             buf = int(mes_dict['Size'])
             try:
                 data = await self.re_sock.read(buf)
+                data = self.symmetric_decrypt_handler(data)
                 mes_dict = json.loads(data)
                 for i, r in enumerate(mes_dict['Details']['Result']):
                     print('<<<' + str(i + 1) + '>>>')
@@ -144,3 +145,11 @@ class Client:
             return crypto_messages
         except Exception as e:
             print('Symmetric Handler')
+
+    def symmetric_decrypt_handler(self, data):
+        try:
+            return self.sym_layer.dec_dict(data)
+        except Exception as e:
+            print(e)
+            print('Symmetric Decrypt Handler')
+            return None
