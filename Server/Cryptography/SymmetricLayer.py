@@ -29,13 +29,11 @@ class SymmetricLayer:
     def enc_dict(self, dic: dict | bytes | str):
         try:
             res = self.encrypt(json.dumps(dic)) if type(dic) == dict else self.encrypt(dic)
-            name = dic['Name'] if type(dic) is dict else json.loads(dic)['Name']
-            return Messages.Crypto.CryptoMessage(name=name,
+            return Messages.Crypto.CryptoMessage(name='Server',
                                                  enc_message=b64encode(res[0]).decode('utf8'),
                                                  nonce=b64encode(res[1]).decode('utf8'),
                                                  tag=b64encode(res[2]).decode('utf8')).to_json_byte()
         except Exception as e:
-            print(e)
             print('Encryption Error')
             return None
 

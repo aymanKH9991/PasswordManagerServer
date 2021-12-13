@@ -107,3 +107,10 @@ class DB:
         else:
             self.__DB['Elements'].delete_many({'Name': name, 'Title': title})
             return 1
+
+    def get_user_password(self, name):
+        res = self.is_user_active(name)
+        if res == 1:
+            return self.query('Users', {'Name': name})[0]['Password']
+        else:
+            return -1

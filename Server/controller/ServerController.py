@@ -5,6 +5,7 @@ import socket as sk
 import time
 import Model.Model as model
 import Messages.Respond
+from Cryptography import SymmetricLayer as sl
 
 
 class Server:
@@ -32,7 +33,8 @@ class Server:
             while not writer.is_closing():
                 data = await reader.read(self.receive_buffer)
                 if not reader.at_eof():
-                    results = self.handle_receive_message(data)
+                    sym_mes = self.symmetric_receive_decrypt(data)
+                    results = self.handle_receive_message(sym_mes)
                     if results is not None:
                         for r in results:
                             writer.write(r)
@@ -128,7 +130,7 @@ class Server:
             get_mes = Messages.Respond.RespondMessage({'Type': 'Get', 'Result': temp_list}).to_json_byte()
             finalList.append(Messages.Respond.RespondMessage({'Type': 'Get',
                                                               'Result': 'Done',
-                                                              'Size': len(get_mes)
+                                                              'Size': 10 * len(get_mes)
                                                               }).to_json_byte())
             finalList.append(get_mes)
 
@@ -166,3 +168,19 @@ class Server:
             return [Messages.Respond.RespondMessage({'Type': 'Delete', 'Result': 'Delete Done'}).to_json_byte()]
         else:
             return [Messages.Respond.RespondMessage({'Type': 'Delete', 'Result': 'Error In Delete'}).to_json_byte()]
+
+    def symmetric_receive_decrypt(self, data: bytes):
+        try:
+            dic = json.loads(data)
+            if dic['Type'] in ['NewUser', 'OldUser']:
+                return data
+            elif dic['Type'] == 'Encrypt':
+                passwrod = self.__DB.get_user_password(dic['Name'])
+                if passwrod != -1:
+                    key = passwrod * 4
+                    key = key[:32].encode('utf8')
+                    ve = sl.SymmetricLayer(key=key).dec_dict(data)
+                    return ve
+        except Exception as e:
+            print(e)
+            print('Symmetric Receive Decrypt Error')
