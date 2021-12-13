@@ -1,13 +1,14 @@
 import asyncio
 from controller import ServerController as sc
-
-
+from Model import Manager
+db_manager = Manager.DBManager()
 async def main():
-    task = await sc.Server().handle()
+    task = await sc.Server(db_manager).handle()
     asyncio.create_task(task)
 
 
 def exception_handler(loop: asyncio.AbstractEventLoop, dic: dict):
+    db_manager.drop_db()
     pass
 
 
@@ -17,6 +18,7 @@ if __name__ == '__main__':
         loop.set_exception_handler(exception_handler)
         loop.run_until_complete(main())
     except KeyboardInterrupt as e:
+        db_manager.drop_db()
         print("Server Shout Down")
     except RuntimeError as e:
         print('End With Error')

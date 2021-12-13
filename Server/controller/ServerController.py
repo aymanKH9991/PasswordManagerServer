@@ -8,8 +8,9 @@ import Messages.Respond
 
 
 class Server:
-    def __init__(self):
+    def __init__(self,db_manager):
         self.__DB = model.DB()
+        db_manager.add_db(self.__DB)
         self.receive_buffer = 2048
         self.active_users = []
 

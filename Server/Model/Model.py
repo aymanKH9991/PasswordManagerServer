@@ -50,6 +50,9 @@ class DB:
                 'Peer': peer
             })
 
+    def remove_active_users(self):
+        self.__DB['ActiveUsers'].drop()
+
     def remove_active_user(self, name, public_key):
         if self.is_user_active(name):
             self.__DB['ActiveUsers'].delete_one({
