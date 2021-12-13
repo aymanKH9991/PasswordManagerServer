@@ -52,6 +52,7 @@ class Client:
             print(mes['Description'])
             mes1 = {
                 "Type": "Empty",
+                "Name": self.input.user_name,
                 "Description": "No Action"
             }
             return [bytes(json.dumps(mes1), 'utf8')]
@@ -60,7 +61,8 @@ class Client:
             mes_len = len(mes_b)
             mes1 = {
                 "Type": "Size",
-                "Size": mes_len
+                "Name": self.input.user_name,
+                "Size": 10 * mes_len
             }
             return [bytes(json.dumps(mes1), 'utf8'), mes_b]
         else:
