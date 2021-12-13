@@ -5,7 +5,7 @@ class DBManager:
     def add_db(self, db):
         self.__DB = db
 
-    def drop_db(self):
+    def delete_active_user_col(self):
         self.__DB.remove_active_users()
 
     def name(self):

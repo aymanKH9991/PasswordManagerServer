@@ -33,8 +33,9 @@ class Server:
             while not writer.is_closing():
                 data = await reader.read(self.receive_buffer)
                 if not reader.at_eof():
-                    sym_mes = self.symmetric_receive_decrypt(data)
-                    results = self.handle_receive_message(sym_mes)
+                    results = self.symmetric_send_encrypt(
+                              self.handle_receive_message(
+                              self.symmetric_receive_decrypt(data)))
                     if results is not None:
                         for r in results:
                             writer.write(r)
@@ -173,6 +174,7 @@ class Server:
         try:
             dic = json.loads(data)
             if dic['Type'] in ['NewUser', 'OldUser']:
+                self.last_user = dic['Name']
                 return data
             elif dic['Type'] == 'Encrypt':
                 passwrod = self.__DB.get_user_password(dic['Name'])
@@ -184,3 +186,17 @@ class Server:
         except Exception as e:
             print(e)
             print('Symmetric Receive Decrypt Error')
+
+    def symmetric_send_encrypt(self, data):
+        if data is None:
+            return None
+        else:
+            enc_list = []
+            passwrod = self.__DB.get_user_password(self.last_user)
+            if passwrod != -1:
+                key = 4 * passwrod
+                key = key[:32].encode('utf8')
+                sym_enc = sl.SymmetricLayer(key=key)
+                for d in data:
+                    enc_list.append(sym_enc.enc_dict(d))
+                return enc_list
