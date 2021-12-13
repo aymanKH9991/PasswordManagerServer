@@ -3,9 +3,12 @@ import json
 import socket as sk
 import sys
 
+from Crypto.PublicKey import RSA
+
 from Controller import InputController as Ic
 from Model import Model as model
 from Cryptography import SymmetricLayer as sr
+from Cryptography import AsymmetricLayer as asl
 
 
 class Client:
@@ -15,29 +18,49 @@ class Client:
         self.input = Ic.CMDInput()
         self.receive_buffer = 2048
         self.__DB = model.DB()
+        self.asl = asl.AsymmetricLayer()
 
     async def handle(self):
         try:
             self.re_sock, self.wr_sock = await asyncio.open_connection(self.address, self.port, family=sk.AF_INET)
-            while not self.wr_sock.is_closing():
-                mes = self.symmetric_encryption_handler(self.handle_sending_message())
-                if len(mes) == 1:
-                    self.wr_sock.write(mes[0])
-                    await self.wr_sock.drain()
-                elif len(mes) == 2:
-                    self.wr_sock.write(mes[0])
-                    await self.wr_sock.drain()
-                    self.wr_sock.write(mes[1])
-                    await self.wr_sock.drain()
-                data = await self.re_sock.read(self.receive_buffer)
-                if not self.re_sock.at_eof():
-                    await self.handle_receive_message(self.symmetric_decrypt_handler(data))
-                else:
-                    self.wr_sock.close()
+            conf = await self.config_message_handler()
+            if conf:
+                while not self.wr_sock.is_closing():
+                    # mes = self.symmetric_encryption_handler(self.handle_sending_message())
+                    mes = self.handle_sending_message()
+                    if len(mes) == 1:
+                        self.wr_sock.write(mes[0])
+                        await self.wr_sock.drain()
+                    elif len(mes) == 2:
+                        self.wr_sock.write(mes[0])
+                        await self.wr_sock.drain()
+                        self.wr_sock.write(mes[1])
+                        await self.wr_sock.drain()
+                    data = await self.re_sock.read(self.receive_buffer)
+                    if not self.re_sock.at_eof():
+                        # await self.handle_receive_message(self.symmetric_decrypt_handler(data))
+                        await self.handle_receive_message(data)
+                    else:
+                        self.wr_sock.close()
+            else:
+                self.wr_sock.close()
         except ConnectionRefusedError:
             print("No Server Respond")
         except ConnectionResetError:
             print("Server Down")
+
+    async def config_message_handler(self):
+        try:
+            data = await self.re_sock.read(4096)
+            js_dic = json.loads(data)
+            if js_dic['Type'] == 'Config':
+                session_mes = self.asl.encrypt_config(js_dic)
+                self.wr_sock.write(session_mes)
+                await self.wr_sock.drain()
+                return True
+        except Exception as e:
+            print('Configuration Handler Error')
+            return False
 
     def handle_sending_message(self):
         if self.input.user_name is None:
@@ -111,7 +134,7 @@ class Client:
             buf = int(mes_dict['Size'])
             try:
                 data = await self.re_sock.read(buf)
-                data = self.symmetric_decrypt_handler(data)
+                # data = self.symmetric_decrypt_handler(data)
                 mes_dict = json.loads(data)
                 for i, r in enumerate(mes_dict['Details']['Result']):
                     print('<<<' + str(i + 1) + '>>>')

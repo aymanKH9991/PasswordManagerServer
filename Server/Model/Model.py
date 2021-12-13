@@ -21,18 +21,6 @@ class DB:
             'Password': password,
             'PublicKey': public_key
         })
-        # password_hash = SHA512.new(password.encode('utf8'))
-        # password_hash.update(public_key.encode('utf8'))
-        # user = self.__DB['Users'].insert_one({
-        #     'Name': name,
-        #     'Password': password_hash.hexdigest(),
-        #     'PublicKey': public_key
-        # })
-        # password_hash.update(user.inserted_id.__str__().encode('utf8'))
-        # self.__DB['Users'].update_one(
-        #     {'Name': name, 'PublicKey': public_key},
-        #     {'$set': {'Password': password_hash.hexdigest()}}
-        # )
         return 1
 
     def query(self, collection_name, query):
