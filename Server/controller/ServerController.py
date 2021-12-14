@@ -3,6 +3,9 @@ import json
 import random
 import socket as sk
 import time
+
+from Crypto.Hash import SHA512
+
 import Model.Model as model
 import Messages.Respond
 import Messages.Configration
@@ -132,7 +135,9 @@ class Server:
     def __login_handler(self, msg_dict):
         query_res = self.__DB.check_user(msg_dict['Name'], msg_dict['UniqueKey'])
         if query_res[1]:
-            if msg_dict['Password'] == query_res[0]['Password']:
+            hash_pass = SHA512.new(msg_dict['Password'].encode('utf8')).hexdigest()
+            user = query_res[0]
+            if hash_pass == user['Password']:
                 self.__DB.add_active_user(msg_dict['Name'], msg_dict['UniqueKey'], self.peer)
                 return [Messages.Respond.RespondMessage({'Type': 'Login',
                                                          'Result': 'Done'

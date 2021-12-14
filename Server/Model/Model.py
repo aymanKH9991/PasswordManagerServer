@@ -18,7 +18,7 @@ class DB:
                     return -1
         user = self.__DB['Users'].insert_one({
             'Name': name,
-            'Password': password,
+            'Password': SHA512.new(password.encode('utf8')).hexdigest(),
             'PublicKey': public_key
         })
         return 1
