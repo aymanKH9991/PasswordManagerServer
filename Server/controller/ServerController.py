@@ -38,10 +38,10 @@ class Server:
                     data = await reader.read(self.receive_buffer)
                     if not reader.at_eof():
                         # Comment's Lines Below are for Symmetric Encryption and Decryption
-                        # results = self.symmetric_send_encrypt(
-                        #           self.handle_receive_message(
-                        #           self.symmetric_receive_decrypt(data)))
-                        results = self.handle_receive_message(data)
+                        results = self.symmetric_send_encrypt(
+                            self.handle_receive_message(
+                                self.symmetric_receive_decrypt(data)))
+                        # results = self.handle_receive_message(data)
                         if results is not None:
                             for r in results:
                                 writer.write(r)
@@ -72,7 +72,20 @@ class Server:
             mes_dic = json.loads(data)
             if mes_dic['Type'] == 'Session':
                 self.session_key = self.asl.decrypt_config(mes_dic)
-                return False if self.session_key is False else True
+                if self.session_key is not False:
+                    writer.write(Messages.Respond.RespondMessage(details={
+                        'Type': 'Config',
+                        'Result': 'Done'
+                    }).to_json_byte())
+                    await writer.drain()
+                    return True
+                else:
+                    writer.write(Messages.Respond.RespondMessage(details={
+                        'Type': 'Config',
+                        'Result': 'Error'
+                    }).to_json_byte())
+                    await writer.drain()
+                    return False
         except Exception as e:
             print('Init Authentication Error')
 
@@ -192,17 +205,8 @@ class Server:
 
     def symmetric_receive_decrypt(self, data: bytes):
         try:
-            dic = json.loads(data)
-            if dic['Type'] in ['NewUser', 'OldUser']:
-                self.last_user = dic['Name']
-                return data
-            elif dic['Type'] == 'Encrypt':
-                passwrod = self.__DB.get_user_password(dic['Name'])
-                if passwrod != -1:
-                    key = passwrod * 4
-                    key = key[:32].encode('utf8')
-                    ve = sl.SymmetricLayer(key=key).dec_dict(data)
-                    return ve
+            dec_dic = sl.SymmetricLayer(key=self.session_key).dec_dict(data)
+            return dec_dic
         except Exception as e:
             print(e)
             print('Symmetric Receive Decrypt Error')
@@ -212,11 +216,7 @@ class Server:
             return None
         else:
             enc_list = []
-            passwrod = self.__DB.get_user_password(self.last_user)
-            if passwrod != -1:
-                key = 4 * passwrod
-                key = key[:32].encode('utf8')
-                sym_enc = sl.SymmetricLayer(key=key)
-                for d in data:
-                    enc_list.append(sym_enc.enc_dict(d))
-                return enc_list
+            sym_enc = sl.SymmetricLayer(key=self.session_key)
+            for d in data:
+                enc_list.append(sym_enc.enc_dict(d))
+            return enc_list

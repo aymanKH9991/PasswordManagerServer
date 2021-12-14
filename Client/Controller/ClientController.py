@@ -7,7 +7,7 @@ from Crypto.PublicKey import RSA
 
 from Controller import InputController as Ic
 from Model import Model as model
-from Cryptography import SymmetricLayer as sr
+from Cryptography import SymmetricLayer as sl
 from Cryptography import AsymmetricLayer as asl
 
 
@@ -26,8 +26,8 @@ class Client:
             conf = await self.config_message_handler()
             if conf:
                 while not self.wr_sock.is_closing():
-                    # mes = self.symmetric_encryption_handler(self.handle_sending_message())
-                    mes = self.handle_sending_message()
+                    mes = self.symmetric_encryption_handler(self.handle_sending_message())
+                    # mes = self.handle_sending_message()
                     if len(mes) == 1:
                         self.wr_sock.write(mes[0])
                         await self.wr_sock.drain()
@@ -38,8 +38,8 @@ class Client:
                         await self.wr_sock.drain()
                     data = await self.re_sock.read(self.receive_buffer)
                     if not self.re_sock.at_eof():
-                        # await self.handle_receive_message(self.symmetric_decrypt_handler(data))
-                        await self.handle_receive_message(data)
+                        await self.handle_receive_message(self.symmetric_decrypt_handler(data))
+                        # await self.handle_receive_message(data)
                     else:
                         self.wr_sock.close()
             else:
@@ -57,8 +57,15 @@ class Client:
                 session_mes = self.asl.encrypt_config(js_dic)
                 self.wr_sock.write(session_mes)
                 await self.wr_sock.drain()
-                return True
+                data = await self.re_sock.read(1024)
+                js_dic = json.loads(data)
+                if js_dic['Type'] == 'Respond':
+                    if js_dic['Details']['Result'] == 'Done':
+                        return True
+                    else:
+                        raise Exception(js_dic['Details']['Result'])
         except Exception as e:
+            print(e)
             print('Configuration Handler Error')
             return False
 
@@ -134,7 +141,7 @@ class Client:
             buf = int(mes_dict['Size'])
             try:
                 data = await self.re_sock.read(buf)
-                # data = self.symmetric_decrypt_handler(data)
+                data = self.symmetric_decrypt_handler(data)
                 mes_dict = json.loads(data)
                 for i, r in enumerate(mes_dict['Details']['Result']):
                     print('<<<' + str(i + 1) + '>>>')
@@ -159,19 +166,18 @@ class Client:
         try:
             crypto_messages = []
             for m in message_list:
-                js_mes = json.loads(m)
-                if js_mes['Type'] in ['NewUser', 'OldUser']:
-                    self.sym_layer = sr.SymmetricLayer(js_mes['Password'].encode('utf8'))
-                    crypto_messages.append(m)
-                else:
-                    crypto_messages.append(self.sym_layer.enc_dict(m))
+                crypto_messages.append(sl.SymmetricLayer(
+                    self.asl.get_session_key()
+                ).enc_dict(m))
             return crypto_messages
         except Exception as e:
             print('Symmetric Handler')
 
     def symmetric_decrypt_handler(self, data):
         try:
-            return self.sym_layer.dec_dict(data)
+            return sl.SymmetricLayer(
+                self.asl.get_session_key()
+            ).dec_dict(data)
         except Exception as e:
             print(e)
             print('Symmetric Decrypt Handler')

@@ -13,8 +13,7 @@ class SymmetricLayer:
         if key is None:
             self.__KEY = get_random_bytes(32)
         else:
-            key = key * 4
-            self.__KEY = key[:32]
+            self.__KEY = key
 
     def encrypt(self, plain_text: bytes | str):
         symmetric = AES.new(self.__KEY, AES.MODE_EAX)
