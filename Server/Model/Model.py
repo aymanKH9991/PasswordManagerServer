@@ -1,5 +1,8 @@
+import time
+
 import pymongo
 from Crypto.Hash import SHA512
+import datetime
 
 
 class DB:
@@ -102,3 +105,12 @@ class DB:
             return self.query('Users', {'Name': name})[0]['Password']
         else:
             return -1
+
+    def add_event(self, user_name):
+        self.__DB['Events'].insert_one({
+            'Time': datetime.datetime.now().__str__(),
+            'UserName': user_name
+        })
+
+    def get_user_events(self, user_name):
+        return self.query('Events', {'UserName': user_name})

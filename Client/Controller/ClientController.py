@@ -21,7 +21,6 @@ class Client:
         self.asl = asl.AsymmetricLayer()
         self.input = Ic.CMDInput(self.asl.get_public_key())
 
-
     async def handle(self):
         try:
             self.re_sock, self.wr_sock = await asyncio.open_connection(self.address, self.port, family=sk.AF_INET)
@@ -89,7 +88,10 @@ class Client:
             }
             return [bytes(json.dumps(mes1), 'utf8')]
         elif mes['Type'] in ('Put', 'Update'):
-            mes_b = bytes(self.input.last_message, 'utf8')
+            pr_key = self.__DB.get_private_key(self.input.user_name)
+            asy_dic = self.asl.encrypt_put_dic(self.input.last_message, pr_key)
+            asy_dic = json.dumps(asy_dic)
+            mes_b = bytes(asy_dic, 'utf8')
             mes_len = len(mes_b)
             mes1 = {
                 "Type": "Size",
@@ -147,9 +149,11 @@ class Client:
                 data = await self.re_sock.read(buf)
                 data = self.symmetric_decrypt_handler(data)
                 mes_dict = json.loads(data)
+                pr_key = self.__DB.get_private_key(self.input.user_name)
                 for i, r in enumerate(mes_dict['Details']['Result']):
                     print('<<<' + str(i + 1) + '>>>')
-                    for key, val in json.loads(r).items():
+                    asy_dic = self.asl.decrypt_put_dic(r, pr_key)
+                    for key, val in asy_dic.items():
                         print(key, ':', val)
             except Exception as e:
                 print(e)

@@ -26,3 +26,15 @@ class DB:
 
     def get_users_name(self):
         return [user['Name'] for user in self.query('Users', {})]
+
+    def get_public_key(self, username):
+        res = self.query('Users', {
+            'Name': username
+        })
+        return res[0]['PublicKey']
+
+    def get_private_key(self, username):
+        res = self.query('Users', {
+            'Name': username
+        })
+        return res[0]['PrivateKey']
