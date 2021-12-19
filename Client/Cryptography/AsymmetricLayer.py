@@ -10,6 +10,7 @@ import Messages.Session as SMs
 
 class AsymmetricLayer:
     def __init__(self):
+        self.rsa_pair = RSA.generate(2048)
         self.__session_key = get_random_bytes(32)
 
     def encrypt_config(self, mes_dic):
@@ -21,3 +22,15 @@ class AsymmetricLayer:
 
     def get_session_key(self):
         return self.__session_key
+
+    def get_private_key(self):
+        """
+            Return private as bytes
+        """
+        return self.rsa_pair.exportKey()
+
+    def get_public_key(self):
+        """
+            Return public as bytes
+        """
+        return self.rsa_pair.publickey().exportKey()

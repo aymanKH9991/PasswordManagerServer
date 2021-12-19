@@ -121,9 +121,9 @@ class Server:
             print('Error in receive Message', msg_str)
 
     def __signup_handler(self, msg_dict):
-        res = self.__DB.insert_new_user(msg_dict['Name'], msg_dict['Password'], msg_dict['UniqueKey'])
+        res = self.__DB.insert_new_user(msg_dict['Name'], msg_dict['Password'], msg_dict['PublicKey'])
         if res == 1:
-            self.__DB.add_active_user(msg_dict['Name'], msg_dict['UniqueKey'], self.peer)
+            self.__DB.add_active_user(msg_dict['Name'], msg_dict['PublicKey'], self.peer)
             return [Messages.Respond.RespondMessage({'Type': 'Sign',
                                                      'Result': 'Done'
                                                      }).to_json_byte()]
@@ -133,12 +133,12 @@ class Server:
                                                      }).to_json_byte()]
 
     def __login_handler(self, msg_dict):
-        query_res = self.__DB.check_user(msg_dict['Name'], msg_dict['UniqueKey'])
+        query_res = self.__DB.check_user(msg_dict['Name'], msg_dict['PublicKey'])
         if query_res[1]:
             hash_pass = SHA512.new(msg_dict['Password'].encode('utf8')).hexdigest()
             user = query_res[0]
             if hash_pass == user['Password']:
-                self.__DB.add_active_user(msg_dict['Name'], msg_dict['UniqueKey'], self.peer)
+                self.__DB.add_active_user(msg_dict['Name'], msg_dict['PublicKey'], self.peer)
                 return [Messages.Respond.RespondMessage({'Type': 'Login',
                                                          'Result': 'Done'
                                                          }).to_json_byte()]

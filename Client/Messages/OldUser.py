@@ -9,7 +9,7 @@ class OldUserMessage(Ms.Message):
                     "Type": "OldUser",
                     "Name": name,
                     "Password": password,
-                    "UniqueKey": unique_key
+                    "PublicKey": unique_key
                 }
             elif message['Type'] == "OldUser":
                 super(OldUserMessage, self).__init__(message=message)

@@ -13,7 +13,7 @@ class NewUserMessage(Ms.Message):
                     "Type": "NewUser",
                     "Name": full_name,
                     "Password": password,
-                    "UniqueKey": unique_key if unique_key is not None else
+                    "PublicKey": unique_key if unique_key is not None else
                     str(random.randint(0, time.time_ns())) +
                     str(uuid.getnode()) +
                     str(random.randint(0, time.time_ns()))

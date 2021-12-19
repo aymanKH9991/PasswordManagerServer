@@ -9,15 +9,16 @@ class DB:
     def get_db_name(self):
         return self.__DB.name
 
-    def insert_new_user(self, name: str, public_key: str):
+    def insert_new_user(self, name: str, public_key: str, private_key: str):
         users = self.__DB['Users'].find({'Name': name})
         if users.count() != 0:
             for user in users:
-                if user['UniqueKey'] == public_key or user['Name'] == name:
+                if user['PublicKey'] == public_key or user['Name'] == name:
                     return -1
         self.__DB['Users'].insert_one({
             'Name': name,
-            'UniqueKey': public_key
+            'PublicKey': public_key,
+            'PrivateKey': private_key
         })
 
     def query(self, collection_name, query):

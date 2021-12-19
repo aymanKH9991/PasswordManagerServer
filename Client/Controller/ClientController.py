@@ -1,4 +1,5 @@
 import asyncio
+import base64
 import json
 import socket as sk
 import sys
@@ -15,10 +16,11 @@ class Client:
     def __init__(self, address='127.0.0.1', port='50050'):
         self.address = address
         self.port = port
-        self.input = Ic.CMDInput()
         self.receive_buffer = 2048
         self.__DB = model.DB()
         self.asl = asl.AsymmetricLayer()
+        self.input = Ic.CMDInput(self.asl.get_public_key())
+
 
     async def handle(self):
         try:
@@ -125,7 +127,9 @@ class Client:
     def signup_handler(self, mes_dict):
         if mes_dict['Result'] == 'Done':
             in_dict = json.loads(self.input.last_message)
-            self.__DB.insert_new_user(in_dict['Name'], in_dict['UniqueKey'])
+            self.__DB.insert_new_user(name=in_dict['Name'],
+                                      public_key=in_dict['PublicKey'],
+                                      private_key=base64.b64encode(self.asl.get_private_key()).decode('utf8'))
             print('SignUp Done')
         else:
             sys.exit(mes_dict['Result'])
