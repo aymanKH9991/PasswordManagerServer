@@ -116,6 +116,10 @@ class Server:
                 return self.__update_handler(msg_dict=msg_dict)
             elif msg_dict['Type'] == 'Delete':
                 return self.__delete_handler(msg_dict=msg_dict)
+            elif msg_dict['Type'] == 'ShareServer':
+                return self.__share_handler(msg_dict=msg_dict)
+            elif msg_dict['Type'] == 'GetUserPK':
+                return self.__get_user_PK_handler(msg_dict=msg_dict)
             else:
                 return None
 
@@ -211,11 +215,22 @@ class Server:
         else:
             return [Messages.Respond.RespondMessage({'Type': 'Delete', 'Result': 'Error In Delete'}).to_json_byte()]
 
+    def __share_handler(self, msg_dict):
+        print(msg_dict)
+        return [Messages.Respond.RespondMessage({'Type': 'Share', 'Result': 'Share'}).to_json_byte()]
+
+    def __get_user_PK_handler(self, msg_dict):
+        pk = self.__DB.get_user_publicKey(msg_dict['SecondUser'])
+        if pk is not None:
+            return [Messages.Respond.RespondMessage({'Type': 'PK', 'PK': pk}).to_json_byte()]
+        else:
+            return [Messages.Respond.RespondMessage({'Type': 'PK', 'PK': 'Error'}).to_json_byte()]
+
     def symmetric_receive_decrypt(self, data: bytes):
         try:
             temp_dict = json.loads(data)
             public_key = self.__DB.get_user_publicKey(temp_dict['Name'])
-            dec_dic = sl.SymmetricLayer(key=self.session_key).dec_dict(data,public_key)
+            dec_dic = sl.SymmetricLayer(key=self.session_key).dec_dict(data, public_key)
             self.__DB.add_event(temp_dict)
             return dec_dic
         except Exception as e:

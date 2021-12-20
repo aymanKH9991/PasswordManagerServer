@@ -4,6 +4,7 @@ import json
 import socket as sk
 import sys
 
+import Crypto.Random
 from Crypto.PublicKey import RSA
 
 from Controller import InputController as Ic
@@ -99,6 +100,13 @@ class Client:
                 "Size": 10 * mes_len
             }
             return [bytes(json.dumps(mes1), 'utf8'), mes_b]
+        elif mes['Type'] == 'Share':
+            dic = {
+                "Type": 'GetUserPK',
+                "Name": self.input.user_name,
+                "SecondUser": mes['SecondUser']
+            }
+            return [bytes(json.dumps(dic), 'utf8')]
         else:
             return [bytes(self.input.last_message, 'utf8')]
 
@@ -123,6 +131,8 @@ class Client:
                         self.delete_handler(sub_dict)
                     if sub_dict['Type'] == 'Update':
                         self.update_handler(sub_dict)
+                    if sub_dict['Type'] == 'PK':
+                        self.share_handler(sub_dict)
         except Exception as e:
             print('Error in Receive Message')
 
@@ -160,6 +170,34 @@ class Client:
                 print('Error In Get')
         else:
             print(mes_dict['Type'], ':', mes_dict['Result'])
+
+    def share_handler(self, mes_dict):
+        """
+            After Getting The Second User Public key, we will encrypt the share data with symmetric encryption
+            and sign it with Client private Key and Encrypt the symmetric key, the message are ready to send
+            to the server to put it in server share tables and only Second User can encrypt it.
+        """
+        try:
+            second_pk = mes_dict['PK']
+            temp = {
+                "Type": '',
+            }
+            random_key = Crypto.Random.get_random_bytes(32)
+            private_key = self.__DB.get_private_key(self.input.user_name)
+            sym = sl.SymmetricLayer(random_key)
+            enc_dic = sym.enc_dict(self.input.last_message, private_key=private_key)
+            dic = json.loads(enc_dic)
+            for key, val in dic.items():
+                temp[key] = val
+            temp['Type'] = 'ShareServer'
+            temp['SecondUser'] = json.loads(self.input.last_message)['SecondUser']
+            pk_second_user = RSA.import_key(base64.b64decode(second_pk))
+            pkcs = Crypto.Cipher.PKCS1_OAEP.new(pk_second_user)
+            enc_key = pkcs.encrypt(random_key)
+            print(base64.b64encode(enc_key).decode('utf8'))
+            temp['EncKey'] = base64.b64encode(enc_key).decode('utf8')
+        except Exception as e:
+            print(e)
 
     def put_handler(self, mes_dict):
         print(mes_dict['Type'], ':', mes_dict['Result'])
