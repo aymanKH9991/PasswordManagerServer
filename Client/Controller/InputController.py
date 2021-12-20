@@ -44,7 +44,6 @@ class CMDInput:
                                                  password=password,
                                                  unique_key=base64.b64encode(self.public_key).decode('utf8'))
             self.last_message = ms.to_json_string()
-            print(self.last_message)
             self.user_name = full_name
         except Exception:
             sys.exit(-1)

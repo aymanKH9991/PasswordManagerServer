@@ -3,7 +3,10 @@ from __future__ import annotations
 import json
 from base64 import b64encode, b64decode
 from Crypto.Cipher import AES
+from Crypto.Hash import SHA512
+from Crypto.PublicKey import RSA
 from Crypto.Random import get_random_bytes
+from Crypto.Signature import pkcs1_15
 
 import Messages.Crypto
 
@@ -36,14 +39,27 @@ class SymmetricLayer:
             print('Encryption Error')
             return None
 
-    def dec_dict(self, dic: bytes):
+    def dec_dict(self, dic: bytes, public_key):
         try:
             dic = json.loads(dic)
             if dic['Type'] == 'Encrypt':
                 res = self.decrypt(cipher_text=b64decode(dic['Message'].encode('utf8')),
                                    nonce=b64decode(dic['Nonce'].encode('utf8')),
                                    tag=b64decode(dic['Tag'].encode('utf8')))
-                return res
+            res1 = json.loads(res)
+            if public_key is None:
+                public_key = b64decode(res1['PublicKey'])
+            else:
+                public_key = b64decode(public_key)
+            print(public_key)
+            key = RSA.importKey(public_key)
+            hash = SHA512.new(b64decode(dic['Message'].encode('utf8')))
+            sign = b64decode(dic['Signature'].encode('utf8'))
+            pkcs1_15.new(key).verify(hash, sign)
+            print('Signature Done')
+
+            return res
+
         except Exception as e:
             print('Decryption Error')
             return None

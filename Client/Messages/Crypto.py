@@ -2,7 +2,7 @@ from Messages import Message as Ms
 
 
 class CryptoMessage(Ms.Message):
-    def __init__(self, name, enc_message, nonce, tag, message: dict = None):
+    def __init__(self, name, enc_message, nonce, tag, signature, message: dict = None):
         try:
             if message is None:
                 self.message_info = {
@@ -10,7 +10,8 @@ class CryptoMessage(Ms.Message):
                     "Name": name,
                     "Message": enc_message,
                     "Nonce": nonce,
-                    "Tag": tag
+                    "Tag": tag,
+                    "Signature": signature
                 }
             elif message["Type"] == "Encrypt":
                 super(CryptoMessage, self).__init__(message=message)

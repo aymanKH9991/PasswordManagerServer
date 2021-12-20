@@ -114,3 +114,7 @@ class DB:
 
     def get_user_events(self, user_name):
         return self.query('Events', {'UserName': user_name})
+
+    def get_user_publicKey(self, user_name):
+        res = self.query('Users', {'Name': user_name})
+        return res[0]['PublicKey'] if res.count() == 1 else None

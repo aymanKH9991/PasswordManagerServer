@@ -3,8 +3,10 @@ from __future__ import annotations
 import json
 from base64 import b64encode, b64decode
 from Crypto.Cipher import AES
+from Crypto.PublicKey import RSA
 from Crypto.Random import get_random_bytes
-
+from Crypto.Signature import PKCS1_v1_5
+from Crypto.Hash import SHA512
 import Messages.Crypto
 
 
@@ -35,14 +37,18 @@ class SymmetricLayer:
         cipher_text = cipher_text if type(cipher_text) == bytes else cipher_text.encode('utf8')
         return symmetric.decrypt(cipher_text)
 
-    def enc_dict(self, dic: dict | bytes | str):
+    def enc_dict(self, dic: dict | bytes | str, private_key):
         try:
             res = self.encrypt(json.dumps(dic)) if type(dic) == dict else self.encrypt(dic)
             name = dic['Name'] if type(dic) is dict else json.loads(dic)['Name']
+            message = res[0]
+            key = RSA.import_key(b64decode(private_key))
+            sign = PKCS1_v1_5.new(key).sign(SHA512.new(message))
             return Messages.Crypto.CryptoMessage(name=name,
                                                  enc_message=b64encode(res[0]).decode('utf8'),
                                                  nonce=b64encode(res[1]).decode('utf8'),
-                                                 tag=b64encode(res[2]).decode('utf8')).to_json_byte()
+                                                 tag=b64encode(res[2]).decode('utf8'),
+                                                 signature=b64encode(sign).decode('utf8')).to_json_byte()
         except Exception as e:
             print(e)
             print('Encryption Error')
