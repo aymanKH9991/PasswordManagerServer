@@ -51,13 +51,10 @@ class SymmetricLayer:
                 public_key = b64decode(res1['PublicKey'])
             else:
                 public_key = b64decode(public_key)
-            print(public_key)
             key = RSA.importKey(public_key)
             hash = SHA512.new(b64decode(dic['Message'].encode('utf8')))
             sign = b64decode(dic['Signature'].encode('utf8'))
             pkcs1_15.new(key).verify(hash, sign)
-            print('Signature Done')
-
             return res
 
         except Exception as e:

@@ -216,6 +216,7 @@ class Server:
             temp_dict = json.loads(data)
             public_key = self.__DB.get_user_publicKey(temp_dict['Name'])
             dec_dic = sl.SymmetricLayer(key=self.session_key).dec_dict(data,public_key)
+            self.__DB.add_event(temp_dict)
             return dec_dic
         except Exception as e:
             print(e)

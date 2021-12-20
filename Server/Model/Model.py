@@ -106,11 +106,15 @@ class DB:
         else:
             return -1
 
-    def add_event(self, user_name):
-        self.__DB['Events'].insert_one({
-            'Time': datetime.datetime.now().__str__(),
-            'UserName': user_name
-        })
+    def add_event(self, dic: dict):
+        temp = {
+            'Time': datetime.datetime.now().__str__()
+        }
+        for key, val in dic.items():
+            temp[key] = val
+        pubkey = self.get_user_publicKey(dic['Name'])
+        temp['PublicKey'] = pubkey
+        self.__DB['Events'].insert_one(temp)
 
     def get_user_events(self, user_name):
         return self.query('Events', {'UserName': user_name})
