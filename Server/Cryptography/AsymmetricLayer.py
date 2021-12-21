@@ -15,10 +15,10 @@ class AsymmetricLayer:
     def decrypt(self, cipher_message):
         pass
 
-    def decrypt_config(self, mes_dic: dict):
+    def decrypt_config(self, mes_dic: dict,private_key):
         try:
             session_key = b64decode(mes_dic['SessionKey'].encode('utf-8'))
-            private_key = RSA.import_key(self.rsa_pair.export_key())
+            private_key = RSA.import_key(private_key)
             pkcs = PKCS1_OAEP.new(private_key)
             session_key = pkcs.decrypt(session_key)
             return session_key

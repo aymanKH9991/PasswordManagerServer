@@ -151,3 +151,12 @@ class DB:
         except Exception as e:
             print(e)
             return False
+
+    def add_server_keys(self, public_key, private_key):
+        self.__DB['ServerInfo'].insert_one({
+            'PublicKey': public_key,
+            'PrivateKey': private_key
+        })
+
+    def get_server_keys(self):
+        return self.__DB['ServerInfo'].find({}).limit(1)[0]

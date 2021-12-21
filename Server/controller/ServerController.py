@@ -1,14 +1,7 @@
 import asyncio
 import json
-import random
 import socket as sk
-import time
-from base64 import b64decode
-
 from Crypto.Hash import SHA512
-from Crypto.PublicKey import RSA
-from Crypto.Signature import pkcs1_15
-
 import Model.Model as model
 import Messages.Respond
 import Messages.Configration
@@ -22,6 +15,9 @@ class Server:
         db_manager.add_db(self.__DB)
         self.receive_buffer = 2048
         self.asl = asl.AsymmetricLayer()
+        key_pair = self.__DB.get_server_keys()
+        self.private_key = key_pair['PrivateKey'].encode('utf8')
+        self.public_key = key_pair['PublicKey'].encode('utf8')
 
     async def handle(self, address='127.0.0.1', port='50050'):
         print(self.__DB.get_db_name())
@@ -70,14 +66,13 @@ class Server:
     async def init_authentication(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter):
         try:
             writer.write(Messages.Configration.ConfigMessage(
-                public_key=self.asl.rsa_pair.public_key()
-                    .export_key().decode('utf8'))
+                public_key=self.public_key.decode('utf8'))
                          .to_json_byte())
             await writer.drain()
             data = await reader.read(self.receive_buffer)
             mes_dic = json.loads(data)
             if mes_dic['Type'] == 'Session':
-                self.session_key = self.asl.decrypt_config(mes_dic)
+                self.session_key = self.asl.decrypt_config(mes_dic, self.private_key)
                 if self.session_key is not False:
                     writer.write(Messages.Respond.RespondMessage(details={
                         'Type': 'Config',
