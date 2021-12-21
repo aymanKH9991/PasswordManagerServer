@@ -1,3 +1,4 @@
+import json
 import time
 
 import pymongo
@@ -122,3 +123,23 @@ class DB:
     def get_user_publicKey(self, user_name):
         res = self.query('Users', {'Name': user_name})
         return res[0]['PublicKey'] if res.count() == 1 else None
+
+    def add_share_message(self, mes):
+        try:
+            res = mes if type(mes) == dict else json.loads(mes)
+            ins_res = self.__DB['ShareMessages'].insert_one(res)
+            return True
+        except Exception as e:
+            print('Add Share Message Error')
+            return False
+
+    def get_share_messages(self, user_name):
+        try:
+            res = []
+            query = self.query('ShareMessages', {'SecondUser': user_name})
+            for r in query:
+                res.append(r)
+            return res if len(res) > 0 else None
+        except Exception as e:
+            print('Get Share Messages Error')
+            return None

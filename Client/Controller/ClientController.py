@@ -21,6 +21,7 @@ class Client:
         self.__DB = model.DB()
         self.asl = asl.AsymmetricLayer()
         self.input = Ic.CMDInput(self.asl.get_public_key())
+        self.__shareMessage = False
 
     async def handle(self):
         try:
@@ -72,10 +73,11 @@ class Client:
             return False
 
     def handle_sending_message(self):
-        if self.input.user_name is None:
-            self.input.init_input_ui()
-        else:
-            self.input.operations_ui()
+        if not self.__shareMessage:
+            if self.input.user_name is None:
+                self.input.init_input_ui()
+            else:
+                self.input.operations_ui()
 
         mes = json.loads(self.input.last_message) \
             if type(self.input.last_message) is str \
@@ -107,6 +109,16 @@ class Client:
                 "SecondUser": mes['SecondUser']
             }
             return [bytes(json.dumps(dic), 'utf8')]
+        elif mes['Type'] == 'ShareServer':
+            mes_b = json.dumps(mes)
+            mes_len = len(mes_b)
+            mes1 = {
+                "Type": "Size",
+                "Name": self.input.user_name,
+                "Size": 10 * mes_len
+            }
+            self.__shareMessage = False
+            return [bytes(json.dumps(mes1), 'utf8'), bytes(mes_b, 'utf8')]
         else:
             return [bytes(self.input.last_message, 'utf8')]
 
@@ -133,6 +145,8 @@ class Client:
                         self.update_handler(sub_dict)
                     if sub_dict['Type'] == 'PK':
                         self.share_handler(sub_dict)
+                    if sub_dict['Type'] == 'ShareRespond':
+                        self.share_respond(sub_dict)
         except Exception as e:
             print('Error in Receive Message')
 
@@ -196,6 +210,8 @@ class Client:
             enc_key = pkcs.encrypt(random_key)
             print(base64.b64encode(enc_key).decode('utf8'))
             temp['EncKey'] = base64.b64encode(enc_key).decode('utf8')
+            self.input.last_message = temp
+            self.__shareMessage = True
         except Exception as e:
             print(e)
 
@@ -206,6 +222,9 @@ class Client:
         print(mes_dict['Type'], ':', mes_dict['Result'])
 
     def update_handler(self, mes_dict):
+        print(mes_dict['Type'], ':', mes_dict['Result'])
+
+    def share_respond(self, mes_dict):
         print(mes_dict['Type'], ':', mes_dict['Result'])
 
     def symmetric_encryption_handler(self, message_list: list):

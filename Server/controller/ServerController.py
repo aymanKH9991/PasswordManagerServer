@@ -216,8 +216,11 @@ class Server:
             return [Messages.Respond.RespondMessage({'Type': 'Delete', 'Result': 'Error In Delete'}).to_json_byte()]
 
     def __share_handler(self, msg_dict):
-        print(msg_dict)
-        return [Messages.Respond.RespondMessage({'Type': 'Share', 'Result': 'Share'}).to_json_byte()]
+        res = self.__DB.add_share_message(msg_dict)
+        if res:
+            return [Messages.Respond.RespondMessage({'Type': 'ShareRespond', 'Result': 'Done'}).to_json_byte()]
+        else:
+            return [Messages.Respond.RespondMessage({'Type': 'ShareRespond', 'Result': 'Error In Put Share Message'}).to_json_byte()]
 
     def __get_user_PK_handler(self, msg_dict):
         pk = self.__DB.get_user_publicKey(msg_dict['SecondUser'])
