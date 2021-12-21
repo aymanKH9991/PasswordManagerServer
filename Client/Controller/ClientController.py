@@ -15,6 +15,7 @@ from Cryptography import AsymmetricLayer as asl
 
 class Client:
     def __init__(self, address='127.0.0.1', port='50050'):
+        self.share_messages = []
         self.address = address
         self.port = port
         self.receive_buffer = 2048
@@ -22,6 +23,7 @@ class Client:
         self.asl = asl.AsymmetricLayer()
         self.input = Ic.CMDInput(self.asl.get_public_key())
         self.__shareMessage = False
+        self.__bring_share_message = True
 
     async def handle(self):
         try:
@@ -76,6 +78,12 @@ class Client:
         if not self.__shareMessage:
             if self.input.user_name is None:
                 self.input.init_input_ui()
+            elif self.__bring_share_message:
+                self.input.last_message = json.dumps({
+                    "Type": "GetShareMes",
+                    "Name": self.input.user_name
+                })
+                self.__bring_share_message = False
             else:
                 self.input.operations_ui()
 
@@ -147,7 +155,10 @@ class Client:
                         self.share_handler(sub_dict)
                     if sub_dict['Type'] == 'ShareRespond':
                         self.share_respond(sub_dict)
+                    if sub_dict['Type'] == 'GetShareMesSize':
+                        await self.get_share_size_handler(sub_dict)
         except Exception as e:
+            print(e)
             print('Error in Receive Message')
 
     def signup_handler(self, mes_dict):
@@ -192,28 +203,31 @@ class Client:
             to the server to put it in server share tables and only Second User can encrypt it.
         """
         try:
-            second_pk = mes_dict['PK']
-            temp = {
-                "Type": '',
-            }
-            random_key = Crypto.Random.get_random_bytes(32)
             private_key = self.__DB.get_private_key(self.input.user_name)
-            sym = sl.SymmetricLayer(random_key)
-            enc_dic = sym.enc_dict(self.input.last_message, private_key=private_key)
-            dic = json.loads(enc_dic)
-            for key, val in dic.items():
-                temp[key] = val
-            temp['Type'] = 'ShareServer'
-            temp['SecondUser'] = json.loads(self.input.last_message)['SecondUser']
-            pk_second_user = RSA.import_key(base64.b64decode(second_pk))
-            pkcs = Crypto.Cipher.PKCS1_OAEP.new(pk_second_user)
-            enc_key = pkcs.encrypt(random_key)
-            print(base64.b64encode(enc_key).decode('utf8'))
-            temp['EncKey'] = base64.b64encode(enc_key).decode('utf8')
-            self.input.last_message = temp
+            self.input.last_message = self.asl.encrypt_share(message=self.input.last_message,
+                                                             pk_dict=mes_dict,
+                                                             private_key=private_key)
             self.__shareMessage = True
         except Exception as e:
             print(e)
+
+    async def get_share_size_handler(self, mes_dict):
+        print('Share Messages: ', mes_dict['Result'])
+        if type(mes_dict['Result']) == int:
+            data = await self.re_sock.read(mes_dict['Size'])
+            data = self.symmetric_decrypt_handler(data)
+            respond_dict = json.loads(data)
+            enc_share_messages = respond_dict['Details']['Result']
+            try:
+                for m in enc_share_messages:
+                    m = json.loads(m)
+                    private_key = self.__DB.get_private_key(self.input.user_name)
+                    dec_mes = self.asl.decrypt_share(message=m['Message'],private_key=private_key,
+                                                     sender_pk=m['SenderPK'],enc_key=m['EncKey'],nonce=m['Nonce'],
+                                                     tag=m['Tag'],signature=m['Signature'])
+                    self.share_messages.append(dec_mes)
+            except Exception as e:
+                print(e)
 
     def put_handler(self, mes_dict):
         print(mes_dict['Type'], ':', mes_dict['Result'])

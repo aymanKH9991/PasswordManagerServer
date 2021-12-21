@@ -120,6 +120,8 @@ class Server:
                 return self.__share_handler(msg_dict=msg_dict)
             elif msg_dict['Type'] == 'GetUserPK':
                 return self.__get_user_PK_handler(msg_dict=msg_dict)
+            elif msg_dict['Type'] == 'GetShareMes':
+                return self.__get_share_message_handler(msg_dict=msg_dict)
             else:
                 return None
 
@@ -220,7 +222,8 @@ class Server:
         if res:
             return [Messages.Respond.RespondMessage({'Type': 'ShareRespond', 'Result': 'Done'}).to_json_byte()]
         else:
-            return [Messages.Respond.RespondMessage({'Type': 'ShareRespond', 'Result': 'Error In Put Share Message'}).to_json_byte()]
+            return [Messages.Respond.RespondMessage(
+                {'Type': 'ShareRespond', 'Result': 'Error In Put Share Message'}).to_json_byte()]
 
     def __get_user_PK_handler(self, msg_dict):
         pk = self.__DB.get_user_publicKey(msg_dict['SecondUser'])
@@ -228,6 +231,28 @@ class Server:
             return [Messages.Respond.RespondMessage({'Type': 'PK', 'PK': pk}).to_json_byte()]
         else:
             return [Messages.Respond.RespondMessage({'Type': 'PK', 'PK': 'Error'}).to_json_byte()]
+
+    def __get_share_message_handler(self, msg_dict):
+        res = self.__DB.get_share_messages(msg_dict['Name'])
+        if res is None:
+            return [Messages.Respond.RespondMessage(
+                {'Type': 'GetShareMesSize', 'Result': 'No Share Message To Show'}).to_json_byte()]
+        else:
+            share_mes = Messages.Respond.RespondMessage(
+                {'Type': 'GetShareMes', 'Result': [json.dumps({
+                    'Sender': r['Name'],
+                    'SenderPK': self.__DB.get_user_publicKey(r['Name']),
+                    'Message': r['Message'],
+                    'Nonce': r['Nonce'],
+                    'Tag': r['Tag'],
+                    'Signature': r['Signature'],
+                    'EncKey': r['EncKey']
+                }) for r in res]}).to_json_byte()
+            siz_mes = Messages.Respond.RespondMessage({'Type': 'GetShareMesSize',
+                                                       "Result": len(res),
+                                                       "Size": 10 * len(share_mes)
+                                                       }).to_json_byte()
+            return [siz_mes, share_mes]
 
     def symmetric_receive_decrypt(self, data: bytes):
         try:
