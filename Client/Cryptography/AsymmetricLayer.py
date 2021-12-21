@@ -114,7 +114,7 @@ class AsymmetricLayer:
             nonce = b64decode(nonce)
             tag = b64decode(tag)
             dec_message = sym.decrypt(message, nonce, tag)
-            return dec_message
+            return [dec_message,b64encode(tag).decode('utf8')]
         except ValueError as ve:
             print(ve, "In Share Message")
         except Exception as e:

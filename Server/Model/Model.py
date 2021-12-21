@@ -143,3 +143,11 @@ class DB:
         except Exception as e:
             print('Get Share Messages Error')
             return None
+
+    def delete_share_message(self, user_name, tag):
+        try:
+            res = self.__DB['ShareMessages'].delete_one({'SecondUser': user_name, 'Tag': tag})
+            return True if res.deleted_count == 1 else False
+        except Exception as e:
+            print(e)
+            return False

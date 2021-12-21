@@ -11,14 +11,16 @@ import Messages.Update
 import Messages.Delete
 import Messages.Get
 import Messages.Share
+import Messages.Put_Delte
 
 
 class CMDInput:
-    def __init__(self,public_key=None):
+    def __init__(self, public_key=None):
         self.last_message = {}
         self.__DB = model.DB()
         self.user_name = None
         self.public_key = public_key
+        self.share_messages = []
 
     def init_input_ui(self):
         try:
@@ -80,7 +82,8 @@ class CMDInput:
             input_str = input("<<Operations UI>>\n"
                               + "1.Add Password\n2.Get Password\n"
                               + "3.Update Password\n4.Delete Password\n"
-                              + "5.Share Password\n6.exit\n"
+                              + "5.Share Password\n6.Manage Share Message\n"
+                              + "7.exit\n"
                               + "Choose: ").lower()
             if input_str in ['add', '1']:
                 self.__put_password_ui()
@@ -92,6 +95,8 @@ class CMDInput:
                 self.__delete_password_ui()
             elif input_str in ['share', '5']:
                 self.__share_password_ui()
+            elif input_str in ['manage', '6']:
+                self.__manage_share_message_ui()
             else:
                 sys.exit(0)
         except Exception as e:
@@ -245,3 +250,37 @@ class CMDInput:
 
         except Exception as e:
             print('Error In Share')
+
+    def __manage_share_message_ui(self):
+        try:
+            i = 0
+            print('\t\t\t\t<<<<SHARE MESSAGES>>>>')
+            print('Index\tSender\t\tTitle\t\tPassword\t\tDescription\t\t')
+            for m, tag in self.share_messages:
+                print(str(i), '>>\t\t', m['Name'], '\t', m['Title'], '\t', m['Password'], ' \t', m['Description'])
+                print('Files: ', len(m['Files']), m['Files'])
+                i += 1
+            index = input('Enter Message Index To Add To Your Passwords: ')
+            if index == '':
+                self.last_message = {
+                    'Type': 'Error',
+                    'Description': 'End Managing Share Messages'
+                }
+                return
+            index = int(index)
+            if index <= -1 or index > len(self.share_messages):
+                raise Exception('Out Of Range')
+            mes = self.share_messages[index][0]
+            self.last_message = Messages.Put_Delte.PutDeleteMessage(title=mes['Title'],
+                                                                    name=self.user_name,
+                                                                    password=mes['Password'],
+                                                                    description=mes['Description'],
+                                                                    files=mes['Files'],
+                                                                    tag=self.share_messages[index][1]).to_json_string()
+            self.share_messages.pop(index)
+        except Exception as e:
+            self.last_message = {
+                'Type': 'Error',
+                'Description': 'End Managing Share Messages'
+            }
+            print(e)

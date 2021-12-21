@@ -33,13 +33,8 @@ class Client:
                 while not self.wr_sock.is_closing():
                     mes = self.symmetric_encryption_handler(self.handle_sending_message())
                     # mes = self.handle_sending_message()
-                    if len(mes) == 1:
-                        self.wr_sock.write(mes[0])
-                        await self.wr_sock.drain()
-                    elif len(mes) == 2:
-                        self.wr_sock.write(mes[0])
-                        await self.wr_sock.drain()
-                        self.wr_sock.write(mes[1])
+                    for m in mes:
+                        self.wr_sock.write(m)
                         await self.wr_sock.drain()
                     data = await self.re_sock.read(self.receive_buffer)
                     if not self.re_sock.at_eof():
@@ -98,7 +93,9 @@ class Client:
                 "Description": "No Action"
             }
             return [bytes(json.dumps(mes1), 'utf8')]
-        elif mes['Type'] in ('Put', 'Update'):
+        elif mes['Type'] in ('Put', 'Update', 'Put-Delete'):
+            if mes['Type'] == 'Put-Delete':
+                self.share_messages = self.input.share_messages
             pr_key = self.__DB.get_private_key(self.input.user_name)
             asy_dic = self.asl.encrypt_put_dic(self.input.last_message, pr_key)
             asy_dic = json.dumps(asy_dic)
@@ -222,10 +219,11 @@ class Client:
                 for m in enc_share_messages:
                     m = json.loads(m)
                     private_key = self.__DB.get_private_key(self.input.user_name)
-                    dec_mes = self.asl.decrypt_share(message=m['Message'],private_key=private_key,
-                                                     sender_pk=m['SenderPK'],enc_key=m['EncKey'],nonce=m['Nonce'],
-                                                     tag=m['Tag'],signature=m['Signature'])
-                    self.share_messages.append(dec_mes)
+                    dec_mes_tag = self.asl.decrypt_share(message=m['Message'], private_key=private_key,
+                                                         sender_pk=m['SenderPK'], enc_key=m['EncKey'], nonce=m['Nonce'],
+                                                         tag=m['Tag'], signature=m['Signature'])
+                    self.share_messages.append(dec_mes_tag)
+                self.input.share_messages = [[json.loads(x[0]), x[1]] for x in self.share_messages]
             except Exception as e:
                 print(e)
 

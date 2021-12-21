@@ -103,7 +103,7 @@ class Server:
                 self.receive_buffer = int(msg_dict['Size'])
                 return None
             elif msg_dict['Type'] == 'Empty':
-                return None
+                return [Messages.Respond.RespondMessage({'Type': 'Empty'}).to_json_byte()]
             elif msg_dict['Type'] == 'NewUser':
                 return self.__signup_handler(msg_dict=msg_dict)
             elif msg_dict['Type'] == 'OldUser':
@@ -122,6 +122,8 @@ class Server:
                 return self.__get_user_PK_handler(msg_dict=msg_dict)
             elif msg_dict['Type'] == 'GetShareMes':
                 return self.__get_share_message_handler(msg_dict=msg_dict)
+            elif msg_dict['Type'] == 'Put-Delete':
+                return self.__put_delete_handler(msg_dict=msg_dict)
             else:
                 return None
 
@@ -253,6 +255,15 @@ class Server:
                                                        "Size": 10 * len(share_mes)
                                                        }).to_json_byte()
             return [siz_mes, share_mes]
+
+    def __put_delete_handler(self, msg_dict):
+        self.__DB.add_element(username=msg_dict['Name'], title=msg_dict['Title'], description=msg_dict['Description'],
+                              password=msg_dict['Password'], files=msg_dict['Files'])
+        res = self.__DB.delete_share_message(msg_dict['Name'], msg_dict['Tag'])
+        if res:
+            return [Messages.Respond.RespondMessage({'Type': 'Put', 'Result': 'Done'}).to_json_byte()]
+        else:
+            return [Messages.Respond.RespondMessage({'Type': 'Put', 'Result': 'Error In Put-Delete'}).to_json_byte()]
 
     def symmetric_receive_decrypt(self, data: bytes):
         try:
