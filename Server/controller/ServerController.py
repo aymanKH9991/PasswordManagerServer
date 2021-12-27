@@ -7,7 +7,7 @@ import Messages.Respond
 import Messages.Configration
 from Cryptography import SymmetricLayer as sl
 from Cryptography import AsymmetricLayer as asl
-
+import ownca
 
 class Server:
     def __init__(self, db_manager):
@@ -15,9 +15,15 @@ class Server:
         db_manager.add_db(self.__DB)
         self.receive_buffer = 2048
         self.asl = asl.AsymmetricLayer()
-        key_pair = self.__DB.get_server_keys()
-        self.private_key = key_pair['PrivateKey'].encode('utf8')
-        self.public_key = key_pair['PublicKey'].encode('utf8')
+        cer = ownca.CertificateAuthority(common_name='SafePass')
+        hst = cer.issue_certificate('PASSWORD-SERVER',common_name='SafePass')
+        print(hst.csr_bytes)
+        # print(cer.sign_csr(,hst.public_key_bytes))
+        self.private_key = cer.key_bytes
+        self.public_key = cer.public_key_bytes
+        # key_pair = self.__DB.get_server_keys()
+        # self.private_key = key_pair['PrivateKey'].encode('utf8')
+        # self.public_key = key_pair['PublicKey'].encode('utf8')
 
     async def handle(self, address='127.0.0.1', port='50050'):
         print(self.__DB.get_db_name())
@@ -71,6 +77,7 @@ class Server:
             await writer.drain()
             data = await reader.read(self.receive_buffer)
             mes_dic = json.loads(data)
+            print(mes_dic)
             if mes_dic['Type'] == 'Session':
                 self.session_key = self.asl.decrypt_config(mes_dic, self.private_key)
                 if self.session_key is not False:
